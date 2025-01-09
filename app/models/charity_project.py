@@ -1,18 +1,21 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
-from .base import Base
+from .base import InvestmentBaseModel
 
 
-class CharityProject(Base):
-    __tablename__ = 'charityproject'
-
-    id = Column(Integer, primary_key=True, index=True)
+class CharityProject(InvestmentBaseModel):
     name = Column(String(100), unique=True, index=True, nullable=False)
     description = Column(String, nullable=False)
-    full_amount = Column(Integer, nullable=False)
     invested_amount = Column(Integer, default=0)
     fully_invested = Column(Boolean, default=False)
 
     create_date = Column(DateTime, default=datetime.utcnow)
-    close_date = Column(DateTime, nullable=True)
+
+    def __repr__(self):
+        """Отладочный метод для представления модели."""
+        return (
+            f"<CharityProject(name='{self.name}', "
+            f"description='{self.description}', "
+            f"create_date='{self.create_date}')>"
+        )

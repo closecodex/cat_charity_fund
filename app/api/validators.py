@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.charity_project import charity_project_crud
@@ -11,7 +11,7 @@ async def check_charity_project_name_is_available(
 ) -> None:
     if not name:
         raise HTTPException(
-            status_code=422,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail='Имя проекта не может быть пустым',
         )
     charity_project = await charity_project_crud.get_charity_project_by_name(
@@ -19,7 +19,7 @@ async def check_charity_project_name_is_available(
     )
     if charity_project is not None:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail='Проект с таким именем уже существует!',
         )
 
@@ -33,21 +33,10 @@ async def check_charity_project_before_delete(
     )
     if charity_project.invested_amount > 0:
         raise HTTPException(
-            status_code=422,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail='В проект уже задонатили',
         )
     return charity_project
-
-
-async def check_new_full_amount_more_than_older(
-        old_obj,
-        new_full_amount: int,
-) -> None:
-    if old_obj.invested_amount > new_full_amount:
-        raise HTTPException(
-            status_code=422,
-            detail='Введите требуемую сумму больше, чем уже внесено',
-        )
 
 
 def check_object_exist(
@@ -56,7 +45,7 @@ def check_object_exist(
 ) -> None:
     if not obj:
         raise HTTPException(
-            status_code=422,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=detail,
         )
 
@@ -68,7 +57,7 @@ async def check_charity_project_could_update(
 ) -> None:
     if not (new_data.name or new_data.description or new_data.full_amount):
         raise HTTPException(
-            status_code=422,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail='Необходимо ввести новые данные',
         )
     if new_data.name:
@@ -77,12 +66,8 @@ async def check_charity_project_could_update(
         )
     if new_data.description == "":
         raise HTTPException(
-            status_code=422,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail='Описание не должно быть пустым',
-        )
-    if new_data.full_amount:
-        await check_new_full_amount_more_than_older(
-            old_obj, new_data.full_amount
         )
 
 
@@ -91,6 +76,6 @@ def check_object_dont_close(
 ):
     if obj.fully_invested:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail='Закрытый проект нельзя редактировать!',
         )

@@ -1,55 +1,44 @@
-from sqlalchemy import asc, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+from typing import Union, List
 
 from app.models.charity_project import CharityProject
 from app.models.donation import Donation
 
 
-async def process_investment(session: AsyncSession) -> None:
+def process_investment(
+    target: Union[CharityProject, Donation],
+    sources: List[Union[CharityProject, Donation]],
+) -> list[Union[CharityProject, Donation]]:
 
-    projects_query = (
-        select(CharityProject)
-        .where(CharityProject.fully_invested.is_(False))
-        .order_by(asc(CharityProject.create_date))
-    )
-    projects_result = await session.execute(projects_query)
-    open_projects = projects_result.scalars().all()
+    changed_objects = []
+    need = target.full_amount - target.invested_amount
 
-    donations_query = (
-        select(Donation)
-        .where(Donation.fully_invested.is_(False))
-        .order_by(asc(Donation.create_date))
-    )
-    donations_result = await session.execute(donations_query)
-    open_donations = donations_result.scalars().all()
+    for source in sources:
 
-    project_index = 0
-    donation_index = 0
+        if need <= 0:
+            break
+        available = source.full_amount - source.invested_amount
 
-    while (
-        project_index < len(open_projects) and
-        donation_index < len(open_donations)
-    ):
-        project = open_projects[project_index]
-        donation = open_donations[donation_index]
-        need = project.full_amount - project.invested_amount
-        available = donation.full_amount - donation.invested_amount
+        if available <= 0:
+            continue
         invest_amount = min(need, available)
-        project.invested_amount += invest_amount
-        donation.invested_amount += invest_amount
+        target.invested_amount += invest_amount
+        source.invested_amount += invest_amount
 
-        if project.invested_amount == project.full_amount:
-            project.fully_invested = True
-            from datetime import datetime
-            project.close_date = datetime.utcnow()
+        if target.invested_amount >= target.full_amount:
+            target.fully_invested = True
+            target.close_date = datetime.utcnow()
 
-        if donation.invested_amount == donation.full_amount:
-            donation.fully_invested = True
-            from datetime import datetime
-            donation.close_date = datetime.utcnow()
+        if source.invested_amount >= source.full_amount:
+            source.fully_invested = True
+            source.close_date = datetime.utcnow()
 
-        if project.fully_invested:
-            project_index += 1
+        if source not in changed_objects:
+            changed_objects.append(source)
 
-        if donation.fully_invested:
-            donation_index += 1
+        need -= invest_amount
+
+    if target not in changed_objects:
+        changed_objects.append(target)
+
+    return changed_objects

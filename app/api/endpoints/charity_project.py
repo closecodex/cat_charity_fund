@@ -11,6 +11,7 @@ from app.schemas.charity_project import (
     CharityProjectDB,
 )
 from app.services.investment import process_investment
+from app.crud.donation import donation_crud
 
 router = APIRouter()
 
@@ -22,11 +23,15 @@ async def create_charity_project(
     superuser=Depends(current_superuser),
 ):
     new_project = await charity_project_crud.create(project_in, session)
-    await process_investment(session)
+    open_donations = await donation_crud.get_open_donations(session)
+    changed_objs = process_investment(new_project, open_donations)
+    session.add_all(changed_objs)
+    await session.commit()
+    await session.refresh(new_project)
     return new_project
 
 
-@router.get("/", response_model=list[CharityProjectDB])
+@router.get('/', response_model=list[CharityProjectDB])
 async def get_all_charity_projects(
     session: AsyncSession = Depends(get_async_session),
 ):
