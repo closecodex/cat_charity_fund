@@ -17,11 +17,4 @@ class Donation(InvestmentBaseModel):
 
     def __repr__(self):
         """Отладочное представление модели Donation."""
-        return (
-            f"<Donation(id={self.id}, user_id={self.user_id}, "
-            f"full_amount={self.full_amount},"
-            "invested_amount={self.invested_amount}, "
-            f"fully_invested={self.fully_invested},"
-            "create_date={self.create_date}, "
-            f"close_date={self.close_date})>"
-        )
+        return super().__repr__()

@@ -10,6 +10,11 @@ from app.schemas.charity_project import (
     CharityProjectUpdate,
     CharityProjectDB,
 )
+from app.api.validators import (
+    check_charity_project_name_is_available,
+    validate_not_fully_invested,
+    validate_full_amount,
+)
 from app.services.investment import process_investment
 from app.crud.donation import donation_crud
 
@@ -22,8 +27,12 @@ async def create_charity_project(
     session: AsyncSession = Depends(get_async_session),
     superuser=Depends(current_superuser),
 ):
+    await check_charity_project_name_is_available(
+        name=project_in.name, session=session
+    )
+
     new_project = await charity_project_crud.create(project_in, session)
-    open_donations = await donation_crud.get_open_donations(session)
+    open_donations = await donation_crud.get_open(session)
     changed_objs = process_investment(new_project, open_donations)
     session.add_all(changed_objs)
     await session.commit()
@@ -57,7 +66,15 @@ async def update_charity_project(
         raise HTTPException(
             status_code=422, detail='Attempt to update restricted fields'
         )
-
+    validate_not_fully_invested(db_project)
+    if 'full_amount' in update_data:
+        validate_full_amount(
+            project_in.full_amount, db_project.invested_amount
+        )
+    if 'name' in update_data:
+        await check_charity_project_name_is_available(
+            name=project_in.name, session=session, project_id=project_id
+        )
     updated_obj = await charity_project_crud.update(
         db_obj=db_project,
         obj_in=project_in,
@@ -72,5 +89,14 @@ async def delete_charity_project(
     session: AsyncSession = Depends(get_async_session),
     user=Depends(current_superuser),
 ):
-    deleted_project = await charity_project_crud.remove(project_id, session)
-    return deleted_project
+    project = await charity_project_crud.get(project_id, session)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if project.invested_amount > 0 or project.fully_invested:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete project with investments or closed project",
+        )
+    await session.delete(project)
+    await session.commit()
+    return project

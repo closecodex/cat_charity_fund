@@ -1,23 +1,28 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.crud.charity_project import charity_project_crud
+from app.models.charity_project import CharityProject
 from app.schemas.charity_project import CharityProjectDB, CharityProjectUpdate
 
 
 async def check_charity_project_name_is_available(
         name: str,
         session: AsyncSession,
+        project_id: int = None,
 ) -> None:
     if not name:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail='Имя проекта не может быть пустым',
         )
-    charity_project = await charity_project_crud.get_charity_project_by_name(
-        name=name, session=session
-    )
-    if charity_project is not None:
+    stmt = select(CharityProject).where(CharityProject.name == name)
+    if project_id:
+        stmt = stmt.where(CharityProject.id != project_id)
+    result = await session.execute(stmt)
+    existing_project = result.scalars().first()
+    if existing_project:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Проект с таким именем уже существует!',
@@ -78,4 +83,28 @@ def check_object_dont_close(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Закрытый проект нельзя редактировать!',
+        )
+
+
+def validate_not_fully_invested(project: CharityProject):
+    if project.fully_invested:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Невозможно обновить полностью проинвестированный проект.'
+        )
+
+
+def validate_full_amount(new_full_amount: int, invested_amount: int):
+    if new_full_amount < invested_amount:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Новая сумма не может быть меньше инвестированной.'
+        )
+
+
+def validate_no_invested_amount(project: CharityProject):
+    if project.invested_amount > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Проект имеет инвестиции, удаление невозможно.'
         )

@@ -60,8 +60,8 @@
 
 ## Дополнительная информация
 
-1. **Автор: ([Мария Осмоловская](https://github.com/closecodex/cat_charity_fund/wiki/))**
+1. **Автор: ([Мария Осмоловская](https://github.com/closecodex/wiki/))**
 
 2. **Технологии: Python, FastAPI, SQLAlchemy, Alembic, SQLite, Pydantic**
 
-3. **Полная техническая документация API: Swagger UI (доступна на /docs), ReDoc (доступна на /redoc)**
+3. **Полная техническая документация API: [Swagger UI](http://localhost:8000/docs),  [ReDoc](http://localhost:8000/redoc)**

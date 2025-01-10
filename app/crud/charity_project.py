@@ -1,5 +1,6 @@
-from sqlalchemy import select
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.models.charity_project import CharityProject
 from app.schemas.charity_project import (
@@ -13,15 +14,12 @@ class CharityProjectCRUD(
 ):
     """CRUD-операции для CharityProject."""
 
-    async def get_open_projects(
-        self, session: AsyncSession
-    ) -> list[CharityProject]:
-        query = (
-            select(CharityProject)
-            .where(CharityProject.fully_invested.is_(False))
-        )
-        result = await session.execute(query)
-        return result.scalars().all()
+    async def get_charity_project_by_name(
+        self, name: str, session: AsyncSession
+    ) -> Optional[CharityProject]:
+        select_statement = select(self.model).where(self.model.name == name)
+        result = await session.execute(select_statement)
+        return result.scalars().first()
 
 
 charity_project_crud = CharityProjectCRUD(CharityProject)

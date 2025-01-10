@@ -1,10 +1,9 @@
-from typing import Generic, Optional, TypeVar
+from typing import Generic, Optional, TypeVar, List
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
 
 from app.models.user import User
 
@@ -22,10 +21,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def get_multi(
         self,
         session: AsyncSession,
-        limit: int = 100,
+        limit: Optional[int] = None,
         skip: int = 0
-    ) -> list[ModelType]:
-        stmt = select(self.model).offset(skip).limit(limit)
+    ) -> List[ModelType]:
+        stmt = select(self.model).offset(skip)
+        if limit is not None:
+            stmt = stmt.limit(limit)
+
         result = await session.execute(stmt)
         return result.scalars().all()
 
@@ -51,32 +53,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if user is not None:
             data['user_id'] = user.id
 
-        if 'name' in data:
-            existing_obj = (
-                await session.execute(
-                    select(self.model).where(self.model.name == data['name'])
-                )
-            ).scalars().first()
-            if existing_obj:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Object with this name already exists."
-                )
-
         db_obj = self.model(**data)
         session.add(db_obj)
-
-        try:
-            if commit:
-                await session.commit()
-            await session.refresh(db_obj)
-        except IntegrityError as e:
-            await session.rollback()
-            raise HTTPException(
-                status_code=400,
-                detail="IntegrityError: duplicate or invalid data."
-            ) from e
-
+        if commit:
+            await session.commit()
+        await session.refresh(db_obj)
         return db_obj
 
     async def update(
@@ -86,43 +67,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj_in: UpdateSchemaType,
         commit: bool = True
     ) -> ModelType:
-
         update_data = obj_in.dict(exclude_unset=True)
-
-        if (
-            'full_amount' in update_data and
-            getattr(db_obj, 'invested_amount', None) is not None
-        ):
-            new_full_amount = update_data['full_amount']
-
-            if (
-                new_full_amount is not None and
-                new_full_amount < db_obj.invested_amount
-            ):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail='Новая сумма не может быть меньше инвестированной.'
-                )
-
-        if getattr(db_obj, 'fully_invested', False):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Невозможно обновить проинвестированный объект.'
-            )
-
         for field, value in update_data.items():
             setattr(db_obj, field, value)
 
         session.add(db_obj)
-        try:
-            if commit:
-                await session.commit()
-        except IntegrityError:
-            await session.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Duplicate or invalid data."
-            )
+        if commit:
+            await session.commit()
         await session.refresh(db_obj)
         return db_obj
 
@@ -132,28 +83,30 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         session: AsyncSession,
         commit: bool = True
     ) -> ModelType:
-
         db_obj = await self.get(obj_id, session)
         if not db_obj:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Object not found"
+                detail="Объект не найден"
             )
-
-        if getattr(db_obj, 'invested_amount', 0) > 0:
+        if db_obj.fully_invested or db_obj.invested_amount > 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Object has investments, cannot delete'
+                detail="Нельзя удалить проект с инвестициями или завершённый."
             )
-
-        try:
-            await session.delete(db_obj)
-            if commit:
-                await session.commit()
-        except IntegrityError:
-            await session.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete object. IntegrityError."
-            )
+        session.delete(db_obj)
+        if commit:
+            await session.commit()
         return db_obj
+
+    async def get_open(
+        self,
+        session: AsyncSession,
+    ) -> List[ModelType]:
+
+        stmt = (
+            select(self.model)
+            .where(self.model.fully_invested.is_(False))
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()

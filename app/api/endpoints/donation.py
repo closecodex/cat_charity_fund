@@ -22,7 +22,7 @@ async def create_donation(
     user=Depends(current_user),
 ):
     new_donation = await donation_crud.create(donation_in, session, user=user)
-    open_projects = await charity_project_crud.get_open_projects(session)
+    open_projects = await charity_project_crud.get_open(session)
     changed_objs = process_investment(new_donation, open_projects)
     session.add_all(changed_objs)
     await session.commit()

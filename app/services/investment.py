@@ -1,44 +1,28 @@
 from datetime import datetime
-from typing import Union, List
 
-from app.models.charity_project import CharityProject
-from app.models.donation import Donation
+from app.models.base import InvestmentBaseModel
 
 
 def process_investment(
-    target: Union[CharityProject, Donation],
-    sources: List[Union[CharityProject, Donation]],
-) -> list[Union[CharityProject, Donation]]:
-
-    changed_objects = []
-    need = target.full_amount - target.invested_amount
-
+    target: InvestmentBaseModel,
+    sources: list[InvestmentBaseModel]
+) -> list[InvestmentBaseModel]:
+    """
+    Распределяет инвестиции из источников (sources) в цель (target).
+    """
+    changed = []
     for source in sources:
-
-        if need <= 0:
-            break
-        available = source.full_amount - source.invested_amount
-
-        if available <= 0:
+        if target.fully_invested or source.fully_invested:
             continue
-        invest_amount = min(need, available)
-        target.invested_amount += invest_amount
-        source.invested_amount += invest_amount
-
-        if target.invested_amount >= target.full_amount:
-            target.fully_invested = True
-            target.close_date = datetime.utcnow()
-
-        if source.invested_amount >= source.full_amount:
-            source.fully_invested = True
-            source.close_date = datetime.utcnow()
-
-        if source not in changed_objects:
-            changed_objects.append(source)
-
-        need -= invest_amount
-
-    if target not in changed_objects:
-        changed_objects.append(target)
-
-    return changed_objects
+        invest_amount = min(
+            target.full_amount - target.invested_amount,
+            source.full_amount - source.invested_amount
+        )
+        for obj in (target, source):
+            obj.invested_amount += invest_amount
+            if obj.invested_amount >= obj.full_amount:
+                obj.fully_invested = True
+                obj.close_date = datetime.utcnow()
+            if obj not in changed:
+                changed.append(obj)
+    return changed

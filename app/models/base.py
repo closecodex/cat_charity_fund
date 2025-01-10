@@ -22,12 +22,8 @@ class InvestmentBaseModel(Base):
 
     __table_args__ = (
         CheckConstraint(
-            'invested_amount >= 0',
-            name='check_invested_amount_positive'
-        ),
-        CheckConstraint(
-            'invested_amount <= full_amount',
-            name='check_invested_not_exceed_full'
+            '0 <= invested_amount <= full_amount',
+            name='check_invested_amount_range'
         ),
     )
 
@@ -36,9 +32,7 @@ class InvestmentBaseModel(Base):
         Отладочный метод для представления модели.
         """
         return (
-            f"<{self.__class__.__name__}("
-            f"id={self.id}, invested_amount={self.invested_amount}, "
-            f"fully_invested={self.fully_invested},"
-            "create_date={self.create_date}, "
-            f"close_date={self.close_date})>"
+            f'<{type(self).__name__}('
+            f'{self.id=}, {self.invested_amount=}, {self.fully_invested=}, '
+            f'{self.create_date=}, {self.close_date=})>'
         )
