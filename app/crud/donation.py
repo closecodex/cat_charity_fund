@@ -11,12 +11,13 @@ class DonationCRUD(CRUDBase[Donation, DonationCreate, DonationUpdate]):
     async def get_user_donations(
         self, session: AsyncSession, user_id: int
     ) -> list[Donation]:
-        result = await session.execute(
-            select(Donation)
-            .where(Donation.user_id == user_id)
-            .order_by(Donation.create_date)
-        )
-        return result.scalars().all()
+        return (
+            await session.execute(
+                select(Donation)
+                .where(Donation.user_id == user_id)
+                .order_by(Donation.create_date)
+            )
+        ).scalars().all()
 
 
 donation_crud = DonationCRUD(Donation)

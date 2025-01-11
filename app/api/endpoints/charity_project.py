@@ -14,6 +14,7 @@ from app.api.validators import (
     check_charity_project_name_is_available,
     validate_not_fully_invested,
     validate_full_amount,
+    validate_project_for_deletion,
 )
 from app.services.investment import process_investment
 from app.crud.donation import donation_crud
@@ -90,13 +91,7 @@ async def delete_charity_project(
     user=Depends(current_superuser),
 ):
     project = await charity_project_crud.get(project_id, session)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    if project.invested_amount > 0 or project.fully_invested:
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot delete project with investments or closed project"
-        )
+    validate_project_for_deletion(project)
     await session.delete(project)
     await session.commit()
     return project

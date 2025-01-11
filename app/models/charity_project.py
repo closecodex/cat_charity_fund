@@ -10,10 +10,8 @@ class CharityProject(InvestmentBaseModel):
 
     def __repr__(self):
         """Отладочное представление модели CharityProject."""
+        base_repr = super().__repr__()
         return (
-            f'CharityProject(name={self.name}, '
-            f'description={self.description}, '
-            f'invested_amount={self.invested_amount}, '
-            f'fully_invested={self.fully_invested}, '
-            f'create_date={self.create_date})'
+            f'{base_repr[:-1]}, name={self.name}, '
+            f'description={self.description})'
         )

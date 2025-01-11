@@ -17,10 +17,11 @@ class CharityProjectCRUD(
     async def get_charity_project_by_name(
         self, name: str, session: AsyncSession
     ) -> Optional[CharityProject]:
-        result = await session.execute(
-            select(self.model).where(self.model.name == name)
-        )
-        return result.scalars().first()
+        return (
+            await session.execute(
+                select(self.model).where(self.model.name == name)
+            )
+        ).scalars().first()
 
 
 charity_project_crud = CharityProjectCRUD(CharityProject)

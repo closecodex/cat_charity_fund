@@ -25,6 +25,10 @@ class InvestmentBaseModel(Base):
             '0 <= invested_amount <= full_amount',
             name='check_invested_amount_range'
         ),
+        CheckConstraint(
+            'full_amount > 0',
+            name='check_full_amount_positive'
+        ),
     )
 
     def __repr__(self):
