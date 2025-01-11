@@ -17,10 +17,14 @@ async def check_charity_project_name_is_available(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail='Имя проекта не может быть пустым',
         )
-    stmt = select(CharityProject).where(CharityProject.name == name)
+    select_statement = (
+        select(CharityProject).where(CharityProject.name == name)
+    )
     if project_id:
-        stmt = stmt.where(CharityProject.id != project_id)
-    result = await session.execute(stmt)
+        select_statement = (
+            select_statement.where(CharityProject.id != project_id)
+        )
+    result = await session.execute(select_statement)
     existing_project = result.scalars().first()
     if existing_project:
         raise HTTPException(

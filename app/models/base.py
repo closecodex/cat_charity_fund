@@ -1,6 +1,6 @@
+from datetime import datetime
 from sqlalchemy import (
-    Column, DateTime, Integer, Boolean,
-    func, CheckConstraint
+    Column, DateTime, Integer, Boolean, CheckConstraint
 )
 
 from app.core.db import Base
@@ -17,7 +17,7 @@ class InvestmentBaseModel(Base):
     full_amount = Column(Integer, nullable=False)
     invested_amount = Column(Integer, default=0, nullable=False)
     fully_invested = Column(Boolean, default=False)
-    create_date = Column(DateTime, default=func.now(), nullable=False)
+    create_date = Column(DateTime, default=datetime.utcnow, nullable=False)
     close_date = Column(DateTime, nullable=True)
 
     __table_args__ = (

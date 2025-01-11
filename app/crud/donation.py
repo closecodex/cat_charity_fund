@@ -11,12 +11,11 @@ class DonationCRUD(CRUDBase[Donation, DonationCreate, DonationUpdate]):
     async def get_user_donations(
         self, session: AsyncSession, user_id: int
     ) -> list[Donation]:
-        select_statement = (
+        result = await session.execute(
             select(Donation)
             .where(Donation.user_id == user_id)
             .order_by(Donation.create_date)
         )
-        result = await session.execute(select_statement)
         return result.scalars().all()
 
 

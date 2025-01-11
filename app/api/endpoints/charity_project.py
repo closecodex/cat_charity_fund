@@ -32,9 +32,9 @@ async def create_charity_project(
     )
 
     new_project = await charity_project_crud.create(project_in, session)
-    open_donations = await donation_crud.get_open(session)
-    changed_objs = process_investment(new_project, open_donations)
-    session.add_all(changed_objs)
+    session.add_all(process_investment(
+        new_project, await donation_crud.get_open(session)
+    ))
     await session.commit()
     await session.refresh(new_project)
     return new_project
@@ -95,7 +95,7 @@ async def delete_charity_project(
     if project.invested_amount > 0 or project.fully_invested:
         raise HTTPException(
             status_code=400,
-            detail="Cannot delete project with investments or closed project",
+            detail="Cannot delete project with investments or closed project"
         )
     await session.delete(project)
     await session.commit()

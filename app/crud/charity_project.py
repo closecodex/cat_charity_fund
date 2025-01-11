@@ -17,8 +17,9 @@ class CharityProjectCRUD(
     async def get_charity_project_by_name(
         self, name: str, session: AsyncSession
     ) -> Optional[CharityProject]:
-        select_statement = select(self.model).where(self.model.name == name)
-        result = await session.execute(select_statement)
+        result = await session.execute(
+            select(self.model).where(self.model.name == name)
+        )
         return result.scalars().first()
 
 

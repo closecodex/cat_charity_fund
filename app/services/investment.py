@@ -10,10 +10,10 @@ def process_investment(
     """
     Распределяет инвестиции из источников (sources) в цель (target).
     """
-    changed = []
+    changed = [target]
     for source in sources:
-        if target.fully_invested or source.fully_invested:
-            continue
+        if target.fully_invested:
+            break
         invest_amount = min(
             target.full_amount - target.invested_amount,
             source.full_amount - source.invested_amount
@@ -23,6 +23,4 @@ def process_investment(
             if obj.invested_amount >= obj.full_amount:
                 obj.fully_invested = True
                 obj.close_date = datetime.utcnow()
-            if obj not in changed:
-                changed.append(obj)
     return changed

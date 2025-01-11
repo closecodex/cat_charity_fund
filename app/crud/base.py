@@ -1,6 +1,5 @@
 from typing import Generic, Optional, TypeVar, List
 
-from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,7 +56,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         session.add(db_obj)
         if commit:
             await session.commit()
-        await session.refresh(db_obj)
+            await session.refresh(db_obj)
         return db_obj
 
     async def update(
@@ -84,16 +83,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         commit: bool = True
     ) -> ModelType:
         db_obj = await self.get(obj_id, session)
-        if not db_obj:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Объект не найден"
-            )
-        if db_obj.fully_invested or db_obj.invested_amount > 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Нельзя удалить проект с инвестициями или завершённый."
-            )
         session.delete(db_obj)
         if commit:
             await session.commit()
