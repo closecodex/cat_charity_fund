@@ -1,67 +1,68 @@
-# Благотворительный фонд QRKot
+# QRKot Charity Fund🐈🐱
 
-## Описание проекта
+## Project Description
 
-### QRKot — это API-приложение, предназначенное для создания благотворительных проектов и организации пожертвований для котиков. Фонд собирает пожертвования на различные целевые проекты: на медицинское обслуживание нуждающихся хвостатых, на обустройство кошачьей колонии в подвале, на корм оставшимся без попечения кошкам — на любые цели, связанные с поддержкой кошачьей популяции.
+### QRKot is an API application designed to create charity projects and organize donations for cats.
+The fund collects donations for various targeted initiatives: providing medical care for cats in need, setting up shelters for cat colonies, feeding abandoned cats, and supporting any other causes related to feline welfare.
 
-## Установка и настройка
+## Installation and Setup
 
-1. **Клонирование репозитория:**
+1. **Clone the repository:**
     
     ```bash
     git clone git@github.com:closecodex/cat_charity_fund.git
     cd cat_charity_fund
     ```
 
-2. **Создание и активация виртуального окружения:**
+2. **Create and activate a virtual environment:**
 
     ```bash
     python -m venv venv
     source venv\Scripts\activate
     ```
 
-3. **Обновление менеджера пакетов и установка зависимостей:**
+3. **Upgrade pip and install dependencies:**
    
    ```bash
    python -m pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
-4. **Выполнение миграций:**
+4. **Run database migrations:**
     
     ```bash
     alembic upgrade head
     ```
 
-5. **Запуск приложения:**
+5. **Start the application:**
     ```bash
     uvicorn app.main:app --reload
     ```
 
-## Примеры эндпоинтов
+## Example Endpoints
 
-### Аутентификация
+### Authentication
 
-- POST /auth/register — регистрация нового пользователя.
+- POST /auth/register — Register a new user.
 
-- POST /auth/jwt/login — логин и получение JWT.
+- POST /auth/jwt/login —  Log in and obtain a JWT token.
 
-### Благотворительные проекты
+### Charity Projects
 
-- GET /charity_project/ — список всех проектов.
+- GET /charity_project/ — Retrieve a list of all charity projects.
 
-- POST /charity_project/ — создание нового проекта.
+- POST /charity_project/ — Create a new charity project.
 
-### Пожертвования
+### Donations
 
-- GET /donation/my — список ваших пожертвований.
+- GET /donation/my — Get a list of your personal donations.
 
-- POST /donation/ — отправка нового пожертвования.
+- POST /donation/ — Make a new donation.
 
-## Дополнительная информация
+## Additional Information
 
-1. **Автор: ([Мария Осмоловская](https://github.com/closecodex/wiki/))**
+1. **Author: ([Mariia Osmolovskaia](https://github.com/closecodex/wiki/))**
 
-2. **Технологии: Python, FastAPI, SQLAlchemy, Alembic, SQLite, Pydantic**
+2. **Technologies: Python, FastAPI, SQLAlchemy, Alembic, SQLite, Pydantic**
 
-3. **Полная техническая документация API: [Swagger UI](http://localhost:8000/docs),  [ReDoc](http://localhost:8000/redoc)**
+3. **API Documentation: [Swagger UI](http://localhost:8000/docs),  [ReDoc](http://localhost:8000/redoc)**
